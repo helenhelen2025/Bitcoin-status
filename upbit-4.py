@@ -19,8 +19,8 @@ def set_korean_font():
         font_name = 'Malgun Gothic'
     elif system == 'Darwin':  # macOS
         font_name = 'AppleGothic'
-    else:  # Linux
-        font_name = 'DejaVu Sans'
+    else:  # Linux (Streamlit Cloud 환경)
+        font_name = 'NanumGothic' # Streamlit Cloud는 Nanum 폰트가 설치되어 있을 가능성이 높음
     
     try:
         plt.rcParams['font.family'] = font_name
@@ -81,6 +81,8 @@ try:
                     value=f"{change:+,.0f} 원",
                     delta=f"{change_percent:+.2f}%"
                 )
+    else:
+        st.warning("⚠️ 비트코인 현재 가격을 가져올 수 없습니다. API 요청 제한 또는 네트워크 문제를 확인하세요.")
     
     # 차트 데이터 조회
     st.header("📊 차트 분석")
@@ -113,14 +115,14 @@ try:
         
         # 2. 캔들스틱 차트 (간단한 바 차트로 구현)
         colors = ['red' if close >= open_price else 'blue' 
-                 for close, open_price in zip(df['close'], df['open'])]
+                          for close, open_price in zip(df['close'], df['open'])]
         ax2.bar(range(len(df)), df['high'] - df['low'], 
-                bottom=df['low'], color=colors, alpha=0.6, width=0.8)
+                        bottom=df['low'], color=colors, alpha=0.6, width=0.8)
         ax2.set_title('Candlestick Chart', fontweight='bold')
         ax2.set_ylabel('Price (KRW)')
         ax2.set_xticks(range(0, len(df), max(1, len(df)//5)))
         ax2.set_xticklabels([df.index[i].strftime('%m-%d') 
-                            for i in range(0, len(df), max(1, len(df)//5))])
+                                 for i in range(0, len(df), max(1, len(df)//5))])
         
         # 3. 거래량 차트
         ax3.bar(df.index, df['volume'], color='skyblue', alpha=0.7)
@@ -132,7 +134,7 @@ try:
         daily_change = ((df['high'] - df['low']) / df['close'] * 100)
         ax4.plot(df.index, daily_change, color='purple', marker='o', markersize=3)
         ax4.axhline(y=daily_change.mean(), color='red', linestyle='--', 
-                   label=f'Average: {daily_change.mean():.2f}%')
+                            label=f'Average: {daily_change.mean():.2f}%')
         ax4.set_title('Daily Volatility (%)', fontweight='bold')
         ax4.set_ylabel('Volatility (%)')
         ax4.legend()
@@ -345,8 +347,11 @@ try:
         )
         
     else:
-        st.error("❌ 차트 데이터를 가져올 수 없습니다.")
+        st.error("❌ 차트 데이터를 가져올 수 없습니다. Upbit API에 문제가 있거나, 선택된 기간에 데이터가 없을 수 있습니다.")
         
+except ModuleNotFoundError:
+    st.error("❌ 'pyupbit' 모듈을 찾을 수 없습니다. Streamlit Cloud에 앱을 배포하는 경우 `requirements.txt` 파일에 `pyupbit`를 추가했는지 확인해주세요.")
+    st.info("로컬에서 실행하는 경우, 터미널에서 `pip install pyupbit`를 실행하여 설치해주세요.")
 except Exception as e:
     st.error(f"❌ 오류 발생: {str(e)}")
     st.info("네트워크 연결 상태와 라이브러리 설치를 확인해주세요.")
